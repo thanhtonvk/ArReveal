@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "511149346208",
+    "firebase_url": "https://arrevealtqk-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "arrevealtqk",
+    "storage_bucket": "arrevealtqk.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:511149346208:android:10f390d35437a23b2828c5",
+        "android_client_info": {
+          "package_name": "com.thpttranquangkhai.arreveal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "511149346208-af5bf0l165cnj3m30mujgq4hmvmgcnsu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYY2outgfJKa5lL8Hlb73fCclKzyjl5gE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "511149346208-af5bf0l165cnj3m30mujgq4hmvmgcnsu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -21,8 +21,17 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@drawable/logo_ar_reveal"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"
         tools:targetApi="31">
+        <activity
+            android:name=".Activity.Classes.GradeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Activity.Subject.SubjectActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Activity.School.CreateActivity"
+            android:exported="false" />
         <activity
             android:name=".Activity.AccountActivity"
             android:exported="false">

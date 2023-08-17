@@ -11,7 +11,10 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 
+import com.thpttranquangkhai.arreveal.Models.Account;
 import com.thpttranquangkhai.arreveal.Models.Entity;
+import com.thpttranquangkhai.arreveal.Models.Grade;
+import com.thpttranquangkhai.arreveal.Models.School;
 
 public class Constants {
 
@@ -22,6 +25,9 @@ public class Constants {
     public static String idClassroom;
     public static String idHost;
     public static String className;
+    public static Account ACCOUNT;
+    public static School SCHOOL;
+    public static Grade GRADE;
     public static int[] colors = new int[] {
             Color.rgb(255, 0, 0),        // Red 500
             Color.rgb(33, 150, 243),     // Blue 500

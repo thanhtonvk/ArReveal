@@ -18,7 +18,17 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.ktx.Firebase;
+import com.thpttranquangkhai.arreveal.Models.Account;
 import com.thpttranquangkhai.arreveal.R;
+import com.thpttranquangkhai.arreveal.Utilities.Constants;
+import com.thpttranquangkhai.arreveal.env.Utils;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -26,11 +36,15 @@ public class LoginActivity extends AppCompatActivity {
     Button btnLogin;
     FirebaseAuth mAuth;
     TextView btnRegister;
+    FirebaseDatabase database;
+    DatabaseReference reference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        database = FirebaseDatabase.getInstance();
+        reference = database.getReference("Account");
         initView();
         onClick();
     }
@@ -52,11 +66,14 @@ public class LoginActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if (task.isSuccessful()) {
-                                Log.e("TAG", "onComplete OK" );
+                                Log.e("TAG", "onComplete OK");
+                                FirebaseUser user = mAuth.getCurrentUser();
+                                String id = user.getUid();
+                                getAccountById(id);
                                 startActivity(new Intent(getApplicationContext(), MainPageActivity.class));
                                 dialog.dismiss();
                             } else {
-                                Log.e("TAG", "Failed" );
+                                Log.e("TAG", "Failed");
                                 Toast.makeText(getApplicationContext(), "Tài khoản hoặc mật khẩu không chính xác", Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
                             }
@@ -77,6 +94,23 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(getApplicationContext(), RegisterActivity.class));
             }
         });
+    }
+
+    private void getAccountById(String id) {
+        ValueEventListener postListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Constants.ACCOUNT = dataSnapshot.getValue(Account.class);
+                Log.w("TAG", "get account successfully" + dataSnapshot.getValue().toString());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Getting Post failed, log a message
+                Log.w("TAG", "loadPost:onCancelled", databaseError.toException());
+            }
+        };
+        reference.child(id).addValueEventListener(postListener);
     }
 
     private void initView() {

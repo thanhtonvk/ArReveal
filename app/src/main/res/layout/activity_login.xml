@@ -91,7 +91,7 @@
         android:textColor="#2F80ED"
         android:textSize="14sp" />
 
-    <Button
+    <android.widget.Button
         android:id="@+id/btn_login"
         android:layout_width="110dp"
         android:layout_height="50dp"

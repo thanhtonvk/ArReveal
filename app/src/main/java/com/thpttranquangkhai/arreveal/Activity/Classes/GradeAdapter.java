@@ -24,6 +24,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.thpttranquangkhai.arreveal.Activity.Subject.SubjectActivity;
 import com.thpttranquangkhai.arreveal.Activity.UserActivity;
 import com.thpttranquangkhai.arreveal.Models.Grade;
 import com.thpttranquangkhai.arreveal.R;
@@ -76,7 +77,7 @@ public class GradeAdapter extends RecyclerView.Adapter<GradeAdapter.ViewHolder> 
             @Override
             public void onClick(View view) {
                 Constants.GRADE = grade;
-                context.startActivity(new Intent(context, UserActivity.class));
+                context.startActivity(new Intent(context, SubjectActivity.class));
             }
         });
     }

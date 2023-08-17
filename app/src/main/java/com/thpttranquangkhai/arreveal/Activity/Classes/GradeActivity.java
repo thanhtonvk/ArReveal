@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.SCHOOL;
+
 public class GradeActivity extends AppCompatActivity {
     ImageView btnInfo;
     TextView tvSchoolName;
@@ -53,6 +55,7 @@ public class GradeActivity extends AppCompatActivity {
         rcvGrade.setAdapter(gradeAdapter);
         loadData();
         onClick();
+        tvSchoolName.setText(SCHOOL.getName());
 
     }
 
@@ -61,6 +64,18 @@ public class GradeActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 dialogCreate();
+            }
+        });
+        btnInfo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String info = String.format("Mã trường: %s\nTên trường: %s\nĐịa chỉ: %s\nSố điện thoại: %s", SCHOOL.getId(), SCHOOL.getName(), SCHOOL.getAddress(), SCHOOL.getPhoneNumber());
+                new AlertDialog.Builder(GradeActivity.this).setTitle("Thông tin").setMessage(info).setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).show();
             }
         });
     }
@@ -95,7 +110,7 @@ public class GradeActivity extends AppCompatActivity {
                 if (gradeName.isEmpty()) {
                     Toast.makeText(GradeActivity.this, "Không được để trống", Toast.LENGTH_SHORT).show();
                 } else {
-                    Grade grade = new Grade(gradeName, Integer.parseInt(gradeName), Constants.SCHOOL.getId());
+                    Grade grade = new Grade(gradeName, Integer.parseInt(gradeName), SCHOOL.getId());
                     createGrade(grade);
                 }
             }
@@ -132,7 +147,7 @@ public class GradeActivity extends AppCompatActivity {
 
 
     private void checkAdmin() {
-        if (!Objects.equals(Constants.ACCOUNT.getId(), Constants.SCHOOL.getIdAccount())) {
+        if (!Objects.equals(Constants.ACCOUNT.getId(), SCHOOL.getIdAccount())) {
             btnAdd.setVisibility(View.GONE);
         }
     }
@@ -143,6 +158,6 @@ public class GradeActivity extends AppCompatActivity {
         btnAdd = findViewById(R.id.btn_add);
         rcvGrade = findViewById(R.id.rcv_item);
         database = FirebaseDatabase.getInstance();
-        reference = database.getReference("Grade").child(Constants.SCHOOL.getId());
+        reference = database.getReference("Grade").child(SCHOOL.getId());
     }
 }

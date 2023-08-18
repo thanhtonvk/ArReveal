@@ -6,15 +6,17 @@ public class Subject {
     private String detail;
     private String image;
     private String idTeacher;
-    private String idSchool;
 
-    public Subject(String id, String name, String detail, String image, String idTeacher, String idSchool) {
+    public Subject() {
+
+    }
+
+    public Subject(String id, String name, String detail, String image, String idTeacher) {
         this.id = id;
         this.name = name;
         this.detail = detail;
         this.image = image;
         this.idTeacher = idTeacher;
-        this.idSchool = idSchool;
     }
 
     public String getIdTeacher() {
@@ -23,14 +25,6 @@ public class Subject {
 
     public void setIdTeacher(String idTeacher) {
         this.idTeacher = idTeacher;
-    }
-
-    public String getIdSchool() {
-        return idSchool;
-    }
-
-    public void setIdSchool(String idSchool) {
-        this.idSchool = idSchool;
     }
 
     public String getId() {

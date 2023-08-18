@@ -15,6 +15,7 @@ import com.thpttranquangkhai.arreveal.Models.Account;
 import com.thpttranquangkhai.arreveal.Models.Entity;
 import com.thpttranquangkhai.arreveal.Models.Grade;
 import com.thpttranquangkhai.arreveal.Models.School;
+import com.thpttranquangkhai.arreveal.Models.Subject;
 
 public class Constants {
 
@@ -28,7 +29,8 @@ public class Constants {
     public static Account ACCOUNT;
     public static School SCHOOL;
     public static Grade GRADE;
-    public static int[] colors = new int[] {
+    public static Subject SUBJECT;
+    public static int[] colors = new int[]{
             Color.rgb(255, 0, 0),        // Red 500
             Color.rgb(33, 150, 243),     // Blue 500
             Color.rgb(76, 175, 80),      // Green 500
@@ -40,6 +42,7 @@ public class Constants {
             Color.rgb(63, 81, 181),      // Indigo 500
             Color.rgb(255, 193, 7)       // Amber 500
     };
+
     public static double cosineSimilarity(float[] vectorA, float[] vectorB) {
         float dotProduct = 0.0f;
         float normA = 0.0f;

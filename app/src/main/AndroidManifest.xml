@@ -24,6 +24,9 @@
         android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"
         tools:targetApi="31">
         <activity
+            android:name=".Activity.Subject.CreateSubjectActivity"
+            android:exported="false" />
+        <activity
             android:name=".Activity.Classes.GradeActivity"
             android:exported="false" />
         <activity

@@ -2,12 +2,24 @@ package com.thpttranquangkhai.arreveal.Models;
 
 import android.graphics.Bitmap;
 
+import java.util.List;
+
 public class Entity {
     private int id;
     private String name;
     private String path_file_online;
     private String image_online;
     private int type;
+
+    public List<Float> getEmbedding() {
+        return embedding;
+    }
+
+    public void setEmbedding(List<Float> embedding) {
+        this.embedding = embedding;
+    }
+
+    private List<Float> embedding;
     public static Bitmap bitmap;
 
     public Entity() {
@@ -19,12 +31,13 @@ public class Entity {
         this.type = type;
     }
 
-    public Entity(int id, String name, String path_file_online, String image_online, int type) {
+    public Entity(int id, String name, String path_file_online, String image_online, int type, List<Float> embedding) {
         this.id = id;
         this.name = name;
         this.path_file_online = path_file_online;
         this.image_online = image_online;
         this.type = type;
+        this.embedding = embedding;
     }
 
     public int getId() {

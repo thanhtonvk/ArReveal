@@ -1,5 +1,8 @@
 package com.thpttranquangkhai.arreveal.Activity;
 
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.SCHOOL;
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.SUBJECT;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -69,6 +72,7 @@ public class UserActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 3);
         }
         firebaseDatabase = FirebaseDatabase.getInstance();
+        reference = firebaseDatabase.getReference("Entity");
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseUser = firebaseAuth.getCurrentUser();
         initView();
@@ -77,8 +81,10 @@ public class UserActivity extends AppCompatActivity {
         loadData();
         onClick();
         mAuth = FirebaseAuth.getInstance();
-        tvName.setText("Mã lớp: " + Constants.idClassroom + "  -  " + Constants.className);
-        if (!Constants.idHost.equals(firebaseUser.getUid())) {
+//        tvName.setText("Mã lớp: " + Constants.idClassroom + "  -  " + Constants.className);
+        if (Constants.SUBJECT.getIdTeacher().equals(firebaseUser.getUid()) || Constants.ACCOUNT.getId().equals(SCHOOL.getIdAccount())) {
+
+        } else {
             button_add.setVisibility(View.GONE);
         }
     }
@@ -90,6 +96,7 @@ public class UserActivity extends AppCompatActivity {
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
             }
+
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
@@ -139,8 +146,8 @@ public class UserActivity extends AppCompatActivity {
     }
 
     private void loadData() {
-        reference = firebaseDatabase.getReference("Entity");
-        reference.child(Constants.idClassroom).addValueEventListener(new ValueEventListener() {
+
+        reference.child(SUBJECT.getId()).addValueEventListener(new ValueEventListener() {
             @SuppressLint("NotifyDataSetChanged")
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

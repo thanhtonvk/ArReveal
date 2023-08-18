@@ -1,6 +1,7 @@
 package com.thpttranquangkhai.arreveal.Activity;
 
 import static com.thpttranquangkhai.arreveal.MainActivity.fileUtils;
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.SUBJECT;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,6 +13,7 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -35,7 +37,18 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.thpttranquangkhai.arreveal.ml.FeatureExtractor;
+import com.thpttranquangkhai.arreveal.ml.Model;
 
+import org.tensorflow.lite.DataType;
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 public class InformationActivity extends AppCompatActivity {
@@ -65,6 +78,7 @@ public class InformationActivity extends AppCompatActivity {
         }
         initView();
         onClick();
+        initModel();
         random = new Random();
         imageView.setImageBitmap(BitMapUtils.getImage(Constants.IMAGE));
 
@@ -78,7 +92,7 @@ public class InformationActivity extends AppCompatActivity {
         firebaseDatabase = FirebaseDatabase.getInstance();
         databaseReference = firebaseDatabase.getReference("Entity");
         firebaseStorage = FirebaseStorage.getInstance();
-
+        entity.setEmbedding(featureExtractor(Constants.bitmap));
     }
 
 
@@ -153,7 +167,7 @@ public class InformationActivity extends AppCompatActivity {
                                     public void onSuccess(Uri uri) {
                                         Log.e("TAG", "upload image" + uri.toString());
                                         entity.setImage_online(uri.toString());
-                                        databaseReference.child(Constants.idClassroom).child(String.valueOf(entity.getId())).setValue(entity).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        databaseReference.child(SUBJECT.getId()).child(String.valueOf(entity.getId())).setValue(entity).addOnCompleteListener(new OnCompleteListener<Void>() {
                                             @Override
                                             public void onComplete(@NonNull Task<Void> task) {
                                                 if (task.isSuccessful()) {
@@ -198,6 +212,15 @@ public class InformationActivity extends AppCompatActivity {
 
     String path;
     Uri uri;
+    private static final float IMAGE_MEAN = 127.5f;
+    private static final float IMAGE_STD = 127.5f;
+
+    FeatureExtractor model;
+    TensorBuffer inputFeature0;
+    int DIM_BATCH_SIZE = 1;
+    int DIM_IMG_SIZE_X = 224;
+    int DIM_IMG_SIZE_Y = 224;
+    int DIM_PIXEL_SIZE = 3;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -211,4 +234,44 @@ public class InformationActivity extends AppCompatActivity {
         }
     }
 
+    private void initModel() {
+        try {
+            model = FeatureExtractor.newInstance(this);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<Float> featureExtractor(Bitmap bitmap) {
+        ByteBuffer byteBuffer = convertBitmapToByteBuffer(bitmap);
+        inputFeature0 = TensorBuffer.createFixedSize(new int[]{DIM_BATCH_SIZE, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, DIM_PIXEL_SIZE}, DataType.FLOAT32);
+        inputFeature0.loadBuffer(byteBuffer);
+        FeatureExtractor.Outputs outputs = model.process(inputFeature0);
+        TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
+        float[] features = outputFeature0.getFloatArray();
+        List<Float> listOfFloats = new ArrayList<>();
+        for (float feat : features) {
+            listOfFloats.add(feat);
+        }
+        return listOfFloats;
+    }
+
+    private ByteBuffer convertBitmapToByteBuffer(Bitmap bitmap) {
+        bitmap = Bitmap.createScaledBitmap(bitmap, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, false);
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(4 * DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y * 3);
+        byteBuffer.order(ByteOrder.nativeOrder());
+        int[] intValues = new int[DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y];
+        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+        int pixel = 0;
+        for (int i = 0; i < DIM_IMG_SIZE_X; i++) {
+            for (int j = 0; j < DIM_IMG_SIZE_Y; j++) {
+                int input = intValues[pixel++];
+                byteBuffer.putFloat((((input >> 16 & 0xFF) - IMAGE_MEAN) / IMAGE_STD));
+                byteBuffer.putFloat((((input >> 8 & 0xFF) - IMAGE_MEAN) / IMAGE_STD));
+                byteBuffer.putFloat((((input & 0xFF) - IMAGE_MEAN) / IMAGE_STD));
+            }
+        }
+        return byteBuffer;
+    }
 }

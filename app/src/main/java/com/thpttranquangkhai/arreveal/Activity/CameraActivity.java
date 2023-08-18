@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
@@ -36,6 +37,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.thpttranquangkhai.arreveal.R;
 import com.thpttranquangkhai.arreveal.Utilities.BitMapUtils;
 import com.thpttranquangkhai.arreveal.Utilities.Constants;
+import com.thpttranquangkhai.arreveal.Utilities.DrawBoundingBox;
 import com.thpttranquangkhai.arreveal.ml.Model;
 import com.thpttranquangkhai.arreveal.tflite.Classifier;
 import com.thpttranquangkhai.arreveal.tflite.YoloV5Classifier;
@@ -85,6 +87,7 @@ public class CameraActivity extends AppCompatActivity {
         initModel();
         cameraShow();
         onClick();
+        // Create a Canvas object.
 
     }
 
@@ -130,7 +133,6 @@ public class CameraActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_galery).
-
                 setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -184,6 +186,7 @@ public class CameraActivity extends AppCompatActivity {
             Bitmap bitmap = BitmapFactory.decodeStream(stream);
             //giảm dung lượng
             Bitmap resize = Bitmap.createScaledBitmap(bitmap, (int) (bitmap.getWidth() * 0.2), (int) (bitmap.getHeight() * 0.2), true);
+            Constants.bitmap = resize;
             byte[] anh = BitMapUtils.getBytes(resize);
             Constants.IMAGE = anh;
             startActivity(new Intent(getApplicationContext(), InformationActivity.class));
@@ -210,38 +213,38 @@ public class CameraActivity extends AppCompatActivity {
                 if (bitmap != null) {
                     WIDTH = bitmap.getWidth();
                     HEIGHT = bitmap.getHeight();
+                    Log.d("IMAGESIZE", String.format("run: %s %s", WIDTH, HEIGHT));
 
                     float sizeWRate = WIDTH / 640f;
                     float sizeHRate = HEIGHT / 640f;
-                    Log.e("TAG", "sizeWRate: " + sizeWRate);
-                    Log.e("TAG", "sizeHRate: " + sizeHRate);
-
-                    Log.e("TAG", "run: " + WIDTH);
-                    Log.e("TAG", "run: " + HEIGHT);
                     List<Classifier.Recognition> recognitions = detector.recognizeImage(bitmap);
                     if (recognitions.size() > 0) {
                         Classifier.Recognition recognition = getMax(recognitions);
                         RectF rectF = recognition.getLocation();
+                        drawBoundingBox.updateRectangle((int) (rectF.left * sizeWRate), (int) (rectF.top * sizeHRate), (int) (rectF.right * sizeWRate), (int) (sizeHRate * rectF.bottom));
                         assert (rectF.left < rectF.right && rectF.top < rectF.bottom);
                         crop = Bitmap.createBitmap((int) (rectF.right * sizeWRate - rectF.left * sizeWRate), (int)
                                 (rectF.bottom * sizeHRate - rectF.top * sizeHRate), Bitmap.Config.ARGB_8888);
-                        new Canvas(crop).drawBitmap(bitmap, -rectF.left * sizeWRate, -rectF.top * sizeHRate, null);
+
+                        Log.d("POSITION", String.format("run: %s %s %s %s", (int) (rectF.left * sizeWRate), (int) (rectF.top * sizeHRate), (int) (rectF.right * sizeWRate), (int) (sizeHRate * rectF.bottom)));
                         img.setImageBitmap(crop);
-                        ByteBuffer byteBuffer = convertBitmapToByteBuffer(crop);
-                        inputFeature0 = TensorBuffer.createFixedSize(new int[]{DIM_BATCH_SIZE, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, DIM_PIXEL_SIZE}, DataType.FLOAT32);
-                        inputFeature0.loadBuffer(byteBuffer);
-                        Model.Outputs outputs = model.process(inputFeature0);
-                        TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
-                        float[] predict = outputFeature0.getFloatArray();
-                        prob = predict[1];
-                        if (prob < 0.5) {
-                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.RED));
-                        } else if (prob >= 0.5 && prob < 0.8) {
-                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.YELLOW));
-                        } else {
-                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.GREEN));
-                        }
-                        progressBar.setProgress((int) (prob * 100));
+//                        ByteBuffer byteBuffer = convertBitmapToByteBuffer(crop);
+//                        inputFeature0 = TensorBuffer.createFixedSize(new int[]{DIM_BATCH_SIZE, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, DIM_PIXEL_SIZE}, DataType.FLOAT32);
+//                        inputFeature0.loadBuffer(byteBuffer);
+//                        Model.Outputs outputs = model.process(inputFeature0);
+//                        TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
+//                        float[] predict = outputFeature0.getFloatArray();
+//                        prob = predict[1];
+//                        if (prob < 0.5) {
+//                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.RED));
+//                        } else if (prob >= 0.5 && prob < 0.8) {
+//                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.YELLOW));
+//                        } else {
+//                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.GREEN));
+//                        }
+//                        progressBar.setProgress((int) (prob * 100));
+                    } else {
+                        drawBoundingBox.updateRectangle(0, 0, 0, 0);
                     }
                 }
                 handler.postDelayed(this, 500);
@@ -264,12 +267,15 @@ public class CameraActivity extends AppCompatActivity {
 
     }
 
+    DrawBoundingBox drawBoundingBox;
+
     private void initView() {
         previewView = findViewById(R.id.preview);
         btnCapture = findViewById(R.id.btn_capture);
         btnBack = findViewById(R.id.btn_back);
         btnGalery = findViewById(R.id.btn_galery);
         progressBar = findViewById(R.id.progressBar);
+        drawBoundingBox = findViewById(R.id.drawbox);
         try {
             model = Model.newInstance(CameraActivity.this);
 

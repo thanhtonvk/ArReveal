@@ -69,8 +69,8 @@ public class DrawBoundingBox extends View {
     private void initPaint() {
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setColor(Color.BLUE);
-        mPaint.setStrokeWidth(20);
+        mPaint.setColor(Color.RED);
+        mPaint.setStrokeWidth(10);
         rectangle = new Rect(0, 0, 0, 0);
     }
 

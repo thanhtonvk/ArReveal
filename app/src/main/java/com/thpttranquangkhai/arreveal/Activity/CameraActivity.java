@@ -66,12 +66,6 @@ public class CameraActivity extends AppCompatActivity {
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     PreviewView previewView;
     private ImageCapture imageCapture;
-    Model model;
-    TensorBuffer inputFeature0;
-    int DIM_BATCH_SIZE = 1;
-    int DIM_IMG_SIZE_X = 600;
-    int DIM_IMG_SIZE_Y = 600;
-    int DIM_PIXEL_SIZE = 3;
     ImageView btnCapture, btnGalery, btnBack;
     ProgressBar progressBar;
     private static final int SELECT_IMAGE = 340;
@@ -96,13 +90,17 @@ public class CameraActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                if (crop != null) {
+                if (top == 0 && left == 0 && right == 0 && bottom == 0) {
+                    Toast.makeText(CameraActivity.this, "Chưa nhận diện được hình", Toast.LENGTH_SHORT).show();
 
+                } else {
                     String str_uri = new StringBuilder(UUID.randomUUID().toString()).append(".jpg").toString();
                     File file = new File(getCacheDir(), str_uri);
                     OutputStream fOut = null;
                     try {
                         fOut = new FileOutputStream(file);
+                        Bitmap bitmap = previewView.getBitmap();
+                        Bitmap crop = cropImage(bitmap, top, left, right, bottom);
                         crop.compress(Bitmap.CompressFormat.JPEG, 85, fOut); // saving the Bitmap to a file compressed as a JPEG with 85% compression rate
                         fOut.flush(); // Not really required
                         fOut.close(); // do not forget to close the stream
@@ -125,8 +123,6 @@ public class CameraActivity extends AppCompatActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                } else {
-                    Toast.makeText(CameraActivity.this, "Chưa nhận diện được hình", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -148,6 +144,27 @@ public class CameraActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+
+    public Bitmap cropImage(Bitmap originalImage, int top, int left, int right, int bottom) {
+        if (top < 0) top = 0;
+        if (left < 0) {
+            left = 0;
+        }
+        int widthImage = originalImage.getWidth();
+        int heightImage = originalImage.getHeight();
+        if (right > widthImage) {
+            right = widthImage;
+        }
+        if (bottom > heightImage) {
+            bottom = heightImage;
+        }
+        int width = right - left;
+        int height = bottom - top;
+        Bitmap resultBmp = Bitmap.createBitmap(originalImage, left, top, width, height);
+
+        return resultBmp;
     }
 
     @Override
@@ -197,11 +214,15 @@ public class CameraActivity extends AppCompatActivity {
     }
 
 
-    float prob = 0.0f;
-    Bitmap crop = null;
+
     ImageView img;
     float WIDTH;
     float HEIGHT;
+
+    int top = 0;
+    int left = 0;
+    int right = 0;
+    int bottom = 0;
 
     private void cameraShow() {
         img = findViewById(R.id.img);
@@ -221,33 +242,21 @@ public class CameraActivity extends AppCompatActivity {
                     if (recognitions.size() > 0) {
                         Classifier.Recognition recognition = getMax(recognitions);
                         RectF rectF = recognition.getLocation();
+                        left = (int) (rectF.left * sizeWRate);
+                        top = (int) (rectF.top * sizeHRate);
+                        right = (int) (rectF.right * sizeWRate);
+                        bottom = (int) (sizeHRate * rectF.bottom);
                         drawBoundingBox.updateRectangle((int) (rectF.left * sizeWRate), (int) (rectF.top * sizeHRate), (int) (rectF.right * sizeWRate), (int) (sizeHRate * rectF.bottom));
-                        assert (rectF.left < rectF.right && rectF.top < rectF.bottom);
-                        crop = Bitmap.createBitmap((int) (rectF.right * sizeWRate - rectF.left * sizeWRate), (int)
-                                (rectF.bottom * sizeHRate - rectF.top * sizeHRate), Bitmap.Config.ARGB_8888);
-
                         Log.d("POSITION", String.format("run: %s %s %s %s", (int) (rectF.left * sizeWRate), (int) (rectF.top * sizeHRate), (int) (rectF.right * sizeWRate), (int) (sizeHRate * rectF.bottom)));
-                        img.setImageBitmap(crop);
-//                        ByteBuffer byteBuffer = convertBitmapToByteBuffer(crop);
-//                        inputFeature0 = TensorBuffer.createFixedSize(new int[]{DIM_BATCH_SIZE, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, DIM_PIXEL_SIZE}, DataType.FLOAT32);
-//                        inputFeature0.loadBuffer(byteBuffer);
-//                        Model.Outputs outputs = model.process(inputFeature0);
-//                        TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
-//                        float[] predict = outputFeature0.getFloatArray();
-//                        prob = predict[1];
-//                        if (prob < 0.5) {
-//                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.RED));
-//                        } else if (prob >= 0.5 && prob < 0.8) {
-//                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.YELLOW));
-//                        } else {
-//                            progressBar.setProgressTintList(ColorStateList.valueOf(Color.GREEN));
-//                        }
-//                        progressBar.setProgress((int) (prob * 100));
                     } else {
+                        top = 0;
+                        left = 0;
+                        right = 0;
+                        bottom = 0;
                         drawBoundingBox.updateRectangle(0, 0, 0, 0);
                     }
                 }
-                handler.postDelayed(this, 500);
+                handler.postDelayed(this, 33);
             }
         };
         handler.post(runnable);
@@ -276,12 +285,7 @@ public class CameraActivity extends AppCompatActivity {
         btnGalery = findViewById(R.id.btn_galery);
         progressBar = findViewById(R.id.progressBar);
         drawBoundingBox = findViewById(R.id.drawbox);
-        try {
-            model = Model.newInstance(CameraActivity.this);
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
 
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
@@ -325,26 +329,7 @@ public class CameraActivity extends AppCompatActivity {
     }
 
 
-    private static final float IMAGE_MEAN = 127.5f;
-    private static final float IMAGE_STD = 127.5f;
 
-    private ByteBuffer convertBitmapToByteBuffer(Bitmap bitmap) {
-        bitmap = Bitmap.createScaledBitmap(bitmap, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, false);
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(4 * DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y * 3);
-        byteBuffer.order(ByteOrder.nativeOrder());
-        int[] intValues = new int[DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y];
-        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
-        int pixel = 0;
-        for (int i = 0; i < DIM_IMG_SIZE_X; i++) {
-            for (int j = 0; j < DIM_IMG_SIZE_Y; j++) {
-                int input = intValues[pixel++];
-                byteBuffer.putFloat((((input >> 16 & 0xFF) - IMAGE_MEAN) / IMAGE_STD));
-                byteBuffer.putFloat((((input >> 8 & 0xFF) - IMAGE_MEAN) / IMAGE_STD));
-                byteBuffer.putFloat((((input & 0xFF) - IMAGE_MEAN) / IMAGE_STD));
-            }
-        }
-        return byteBuffer;
-    }
 
     private Classifier detector;
     public static final int TF_OD_API_INPUT_SIZE = 640;

@@ -210,7 +210,6 @@ public class CameraActivity extends AppCompatActivity {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
     }
 
 

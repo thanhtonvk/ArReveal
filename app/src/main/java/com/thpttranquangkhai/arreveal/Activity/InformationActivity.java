@@ -106,7 +106,7 @@ public class InformationActivity extends AppCompatActivity {
 
     }
 
-    private static final int REQUEST_UPLOAD = 3;
+    private static final int REQUEST_UPLOAD = 3234;
 
     private void onClick() {
         edtFile.setOnClickListener(new View.OnClickListener() {
@@ -150,22 +150,22 @@ public class InformationActivity extends AppCompatActivity {
         dialog.setTitle("Đang upload");
         dialog.show();
         storageReference = firebaseStorage.getReference(fileName);
-        storageReference.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+        storageReference.putFile(uriUploadFile).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
                     public void onSuccess(Uri uri) {
-                        Log.e("TAG", "upload file" + uri.toString());
+                        Log.e("TAG", "upload file " + uri.toString());
                         entity.setPath_file_online(uri.toString());
-                        storageReference = firebaseStorage.getReference(fileName.split("\\.")[0] + ".jpg");
+                        storageReference = firebaseStorage.getReference("image"+fileName.split("\\.")[0] + ".jpg");
                         storageReference.putBytes(Constants.IMAGE).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                             @Override
                             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                 storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                                     @Override
                                     public void onSuccess(Uri uri) {
-                                        Log.e("TAG", "upload image" + uri.toString());
+                                        Log.e("TAG", "upload image " + uri.toString());
                                         entity.setImage_online(uri.toString());
                                         databaseReference.child(SUBJECT.getId()).child(String.valueOf(entity.getId())).setValue(entity).addOnCompleteListener(new OnCompleteListener<Void>() {
                                             @Override
@@ -211,9 +211,9 @@ public class InformationActivity extends AppCompatActivity {
     }
 
     String path;
-    Uri uri;
-    private static final float IMAGE_MEAN = 127.5f;
-    private static final float IMAGE_STD = 127.5f;
+    Uri uriUploadFile;
+    private static final float IMAGE_MEAN = 0.0f;
+    private static final float IMAGE_STD = 1.0f;
 
     FeatureExtractor model;
     TensorBuffer inputFeature0;
@@ -225,10 +225,10 @@ public class InformationActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
+        if (resultCode == RESULT_OK && requestCode == REQUEST_UPLOAD) {
             assert data != null;
-            uri = data.getData();
-            path = fileUtils.getPath(uri);
+            uriUploadFile = data.getData();
+            path = fileUtils.getPath(uriUploadFile);
             Log.e("TAG", "File path " + path);
             edtFile.setText(path.split("/")[path.split("/").length - 1]);
         }

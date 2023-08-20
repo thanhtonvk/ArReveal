@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -44,15 +45,15 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     private void loadData() {
-        reference = database.getReference("ListJoined");
-        reference.child(Constants.idClassroom).addValueEventListener(new ValueEventListener() {
-            @SuppressLint("NotifyDataSetChanged")
+        reference = database.getReference("JoinedSchool");
+        reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+
                 for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                    Account account = dataSnapshot.getValue(Account.class);
-                    accountList.add(account);
-                    userAdapter.notifyDataSetChanged();
+                    String idAccount = dataSnapshot.getKey();
+                    Log.e("IDACCOUNT", "onDataChange: " + idAccount);
+                    checkKeyExist(idAccount);
                 }
             }
 
@@ -61,5 +62,42 @@ public class AccountActivity extends AppCompatActivity {
 
             }
         });
+
+    }
+
+    private void checkKeyExist(String idAccount) {
+        reference = database.getReference("JoinedSchool").child(idAccount);
+        reference.child(Constants.SCHOOL.getId()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    getAccountById(idAccount);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+
+    private void getAccountById(String id) {
+        reference = database.getReference("Account");
+        ValueEventListener postListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                accountList.add(dataSnapshot.getValue(Account.class));
+                userAdapter.notifyDataSetChanged();
+                Log.w("TAG", "get account successfully" + dataSnapshot.getValue().toString());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Getting Post failed, log a message
+                Log.w("TAG", "loadPost:onCancelled", databaseError.toException());
+            }
+        };
+        reference.child(id).addValueEventListener(postListener);
     }
 }

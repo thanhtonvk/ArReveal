@@ -1,6 +1,10 @@
 package com.thpttranquangkhai.arreveal.Adapter;
 
 
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.GRADE;
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.SCHOOL;
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.SUBJECT;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -59,6 +63,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         holder.tvFirstName.setTextColor(Constants.colors[color]);
         holder.tvFullName.setText(account.getName());
         holder.tvFirstName.setText(String.valueOf(account.getName().toCharArray()[0]));
+        holder.tvEmail.setText(String.valueOf(account.getEmail()));
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -69,29 +74,14 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
     private void dialog(Account account, int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Bạn muốn xóa khỏi lớp không?");
+        builder.setTitle("Bạn muốn cấp quyền chỉnh sửa cho tài khoản này?");
         builder.setPositiveButton("Có", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 if (firebaseUser.getUid().equals(account.getId())) {
-                    Toast.makeText(context, "Bạn không thể xóa chính bạn", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "Bạn không thể cấp chính bạn", Toast.LENGTH_SHORT).show();
                 } else {
-                    reference = database.getReference("Joined");
-                    reference.child(account.getId()).child(Constants.idClassroom).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            if (task.isSuccessful()) {
-                                dialogInterface.dismiss();
-                                delete(account.getId());
-                                accountList.remove(position);
-
-                                Toast.makeText(context, "Xóa thành công", Toast.LENGTH_SHORT).show();
-                            } else {
-                                dialogInterface.dismiss();
-                                Toast.makeText(context, "Xóa không thành công", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
+                    acceptRole(account.getId());
                 }
 
             }
@@ -105,12 +95,17 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         builder.show();
     }
 
-    private void delete(String idAcc) {
-        reference = database.getReference("ListJoined");
-        reference.child(Constants.idClassroom).child(idAcc).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+    private void acceptRole(String idAcc) {
+        reference = database.getReference("Subject").child(SCHOOL.getId()).child(GRADE.getId()).child(SUBJECT.getId());
+        SUBJECT.setIdTeacher(idAcc);
+        reference.setValue(SUBJECT).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-
+                if (task.isSuccessful()) {
+                    Toast.makeText(context, "Cấp quyền thành công", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(context, "Cấp quyền không thành công", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -121,12 +116,13 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvFullName, tvFirstName;
+        TextView tvFullName, tvFirstName, tvEmail;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvFullName = itemView.findViewById(R.id.tv_full_name);
             tvFirstName = itemView.findViewById(R.id.tv_first_name);
+            tvEmail = itemView.findViewById(R.id.tv_email);
         }
     }
 }

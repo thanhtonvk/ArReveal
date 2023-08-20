@@ -33,12 +33,22 @@
 
     </androidx.cardview.widget.CardView>
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/preview"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_below="@id/cv">
 
-    </androidx.camera.view.PreviewView>
+        <androidx.camera.view.PreviewView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.thpttranquangkhai.arreveal.Utilities.DrawBoundingBox
+            android:id="@+id/drawbox"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </RelativeLayout>
 
 
     <ImageView

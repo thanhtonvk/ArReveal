@@ -53,7 +53,7 @@ public class UserActivity extends AppCompatActivity {
     FirebaseAuth mAuth;
     FirebaseAuth firebaseAuth;
     FirebaseUser firebaseUser;
-    FloatingActionButton button_add;
+    FloatingActionButton button_add, btn_camera;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,11 +81,11 @@ public class UserActivity extends AppCompatActivity {
         loadData();
         onClick();
         mAuth = FirebaseAuth.getInstance();
-//        tvName.setText("Mã lớp: " + Constants.idClassroom + "  -  " + Constants.className);
         if (Constants.SUBJECT.getIdTeacher().equals(firebaseUser.getUid()) || Constants.ACCOUNT.getId().equals(SCHOOL.getIdAccount())) {
 
         } else {
             button_add.setVisibility(View.GONE);
+            user.setVisibility(View.GONE);
         }
     }
 
@@ -134,6 +134,12 @@ public class UserActivity extends AppCompatActivity {
                 startActivity(new Intent(UserActivity.this, AccountActivity.class));
             }
         });
+        btn_camera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(UserActivity.this, CompareActivity.class));
+            }
+        });
     }
 
     private void initView() {
@@ -143,6 +149,7 @@ public class UserActivity extends AppCompatActivity {
         tvName = findViewById(R.id.tv_name);
         user = findViewById(R.id.btn_logout);
         button_add = findViewById(R.id.btn_add);
+        btn_camera = findViewById(R.id.btn_camera);
     }
 
     private void loadData() {

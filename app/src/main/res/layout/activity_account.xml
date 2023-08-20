@@ -23,7 +23,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:gravity="center_vertical|right"
-                android:text="Danh sách học sinh"
+                android:text="Danh sách cấp quyền tài khoản"
                 android:textColor="#FF9800"
                 android:textStyle="bold" />
         </LinearLayout>

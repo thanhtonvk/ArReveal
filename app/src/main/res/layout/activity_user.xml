@@ -59,6 +59,15 @@
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:layout_centerHorizontal="true"
+        android:id="@+id/btn_camera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="30dp"
+        android:src="@drawable/ic_baseline_camera_alt_24" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btn_add"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

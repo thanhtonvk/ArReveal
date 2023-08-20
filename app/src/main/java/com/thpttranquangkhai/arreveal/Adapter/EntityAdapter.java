@@ -1,5 +1,7 @@
 package com.thpttranquangkhai.arreveal.Adapter;
 
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.SCHOOL;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -75,19 +77,19 @@ public class EntityAdapter extends RecyclerView.Adapter<EntityAdapter.ViewHolder
                 Log.e("TAG", "onLoadCleared: " + "cannot load image");
             }
         });
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Constants.entity = entity;
-                Intent intent = new Intent(context, CompareActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
-            }
-        });
+//        holder.itemView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Constants.entity = entity;
+//                Intent intent = new Intent(context, CompareActivity.class);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                context.startActivity(intent);
+//            }
+//        });
         holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                if (Constants.idHost.equals(firebaseUser.getUid())) {
+                if (Constants.SUBJECT.getIdTeacher().equals(firebaseUser.getUid()) || Constants.ACCOUNT.getId().equals(SCHOOL.getIdAccount())) {
                     dialog(entity, position);
                 }
                 return false;
@@ -101,7 +103,7 @@ public class EntityAdapter extends RecyclerView.Adapter<EntityAdapter.ViewHolder
         builder.setPositiveButton("Xóa", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                reference = database.getReference("Entity").child(Constants.idClassroom).child(String.valueOf(entity.getId()));
+                reference = database.getReference("Entity").child(Constants.SUBJECT.getId()).child(String.valueOf(entity.getId()));
                 reference.removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {

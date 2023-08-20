@@ -55,7 +55,7 @@ public class GradeActivity extends AppCompatActivity {
         rcvGrade.setAdapter(gradeAdapter);
         loadData();
         onClick();
-        tvSchoolName.setText(SCHOOL.getName());
+        tvSchoolName.setText(SCHOOL.getId() + " - " + SCHOOL.getName());
 
     }
 

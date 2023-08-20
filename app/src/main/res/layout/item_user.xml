@@ -31,14 +31,33 @@
                     android:textSize="30sp" />
             </androidx.cardview.widget.CardView>
 
-            <TextView
-                android:id="@+id/tv_full_name"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center"
-                android:text="Do Thanh Ton"
-                android:textColor="@color/primary"
-                android:textSize="30sp" />
+                android:orientation="vertical">
+
+                <TextView
+                    android:textStyle="bold"
+                    android:id="@+id/tv_full_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Do Thanh Ton"
+                    android:textColor="@color/primary"
+                    android:textSize="24sp" />
+
+                <TextView
+                    android:id="@+id/tv_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="2"
+                    android:gravity="center"
+                    android:text="thanhtonvk@gmail.com"
+                    android:textColor="#E91E63"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
         </LinearLayout>
 
 

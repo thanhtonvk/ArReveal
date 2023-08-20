@@ -1,5 +1,9 @@
 package com.thpttranquangkhai.arreveal.Activity;
 
+import static com.thpttranquangkhai.arreveal.Utilities.Constants.SUBJECT;
+
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
@@ -11,6 +15,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -29,10 +34,15 @@ import android.widget.Toast;
 import android.widget.VideoView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.thpttranquangkhai.arreveal.Models.Entity;
 import com.thpttranquangkhai.arreveal.R;
-import com.thpttranquangkhai.arreveal.Utilities.BitMapUtils;
 import com.thpttranquangkhai.arreveal.Utilities.Constants;
+import com.thpttranquangkhai.arreveal.Utilities.DrawBoundingBox;
 import com.thpttranquangkhai.arreveal.ml.FeatureExtractor;
 import com.thpttranquangkhai.arreveal.tflite.Classifier;
 import com.thpttranquangkhai.arreveal.tflite.YoloV5Classifier;
@@ -41,10 +51,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -53,8 +63,7 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     PreviewView previewView;
     private ImageCapture imageCapture;
-    Entity entity;
-    List<Entity> entityList;
+    List<Entity> entityList = new ArrayList<>();
     ImageView img_display;
 
     Matrix matrix = new Matrix();
@@ -70,18 +79,18 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
     PointF mid = new PointF();
     float oldDist = 1f;
     VideoView videoView;
+    FirebaseDatabase database;
+    DatabaseReference reference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_compare);
         initView();
-        result = Constants.entity;
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 3);
         }
         img = findViewById(R.id.img);
-        entity = Constants.entity;
         cameraShow();
         findViewById(R.id.btn_back).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -93,6 +102,34 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
         setRotationImage();
         videoView = findViewById(R.id.video_play);
         initModel();
+        database = FirebaseDatabase.getInstance();
+        reference = database.getReference("Entity").child(SUBJECT.getId());
+        loadDataList();
+    }
+
+    private void loadDataList() {
+        ProgressDialog dialog = new ProgressDialog(CompareActivity.this);
+        dialog.setTitle("Đang tải dữ liệu");
+        dialog.show();
+        reference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                entityList.clear();
+                for (DataSnapshot dataSnapshot :
+                        snapshot.getChildren()) {
+                    Entity entity = dataSnapshot.getValue(Entity.class);
+                    entityList.add(entity);
+                }
+                dialog.dismiss();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                dialog.dismiss();
+                Toast.makeText(CompareActivity.this, "Tải dữ liệu lỗi, vui lòng thử lại", Toast.LENGTH_SHORT).show();
+            }
+        });
+
     }
 
     float rotation = 0;
@@ -197,41 +234,105 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
 
 
     boolean flag = false;
-    Entity result;
     float WIDTH;
     float HEIGHT;
-    Bitmap crop;
+    ImageView img;
+
+    int top = 0;
+    int left = 0;
+    int right = 0;
+    int bottom = 0;
+    DrawBoundingBox drawBoundingBox;
 
     private void cameraShow() {
+        img = findViewById(R.id.img);
         Handler handler = new Handler();
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                Bitmap bitmap = previewView.getBitmap();
-                if (bitmap != null) {
-                    if (!flag) {
-
+                if (!flag) {
+                    Bitmap bitmap = previewView.getBitmap();
+                    if (bitmap != null) {
+                        WIDTH = bitmap.getWidth();
+                        HEIGHT = bitmap.getHeight();
+                        Log.d("IMAGESIZE", String.format("run: %s %s", WIDTH, HEIGHT));
+                        float sizeWRate = WIDTH / 640f;
+                        float sizeHRate = HEIGHT / 640f;
                         List<Classifier.Recognition> recognitions = detector.recognizeImage(bitmap);
                         if (recognitions.size() > 0) {
-                            search(recognitions, bitmap);
+                            Classifier.Recognition recognition = getMax(recognitions);
+                            RectF rectF = recognition.getLocation();
+                            left = (int) (rectF.left * sizeWRate);
+                            top = (int) (rectF.top * sizeHRate);
+                            right = (int) (rectF.right * sizeWRate);
+                            bottom = (int) (sizeHRate * rectF.bottom);
+                            drawBoundingBox.updateRectangle((int) (rectF.left * sizeWRate), (int) (rectF.top * sizeHRate), (int) (rectF.right * sizeWRate), (int) (sizeHRate * rectF.bottom));
+                            Bitmap cropImage = cropImage(bitmap, top, left, right, bottom);
+                            Entity result = search(cropImage);
+                            if (result != null) {
+                                flag = true;
+                                display(result);
+                            }
+                            Log.d("POSITION", String.format("run: %s %s %s %s", (int) (rectF.left * sizeWRate), (int) (rectF.top * sizeHRate), (int) (rectF.right * sizeWRate), (int) (sizeHRate * rectF.bottom)));
+                        } else {
+                            top = 0;
+                            left = 0;
+                            right = 0;
+                            bottom = 0;
+                            drawBoundingBox.updateRectangle(0, 0, 0, 0);
                         }
                     }
                 }
-                handler.postDelayed(this, 500);
+
+                handler.postDelayed(this, 33);
             }
         };
         handler.post(runnable);
     }
 
-    private void display() {
-        if (result.getType() == 1) {
+    public Bitmap cropImage(Bitmap originalImage, int top, int left, int right, int bottom) {
+        if (top < 0) top = 0;
+        if (left < 0) {
+            left = 0;
+        }
+        int widthImage = originalImage.getWidth();
+        int heightImage = originalImage.getHeight();
+        if (right > widthImage) {
+            right = widthImage;
+        }
+        if (bottom > heightImage) {
+            bottom = heightImage;
+        }
+        int width = right - left;
+        int height = bottom - top;
+        Bitmap resultBmp = Bitmap.createBitmap(originalImage, left, top, width, height);
+
+        return resultBmp;
+    }
+
+    private Classifier.Recognition getMax(List<Classifier.Recognition> recognitions) {
+        Classifier.Recognition result = null;
+        float max = 0;
+        for (Classifier.Recognition rg : recognitions
+        ) {
+            if (rg.getConfidence() > max) {
+                result = rg;
+                max = rg.getConfidence();
+            }
+        }
+        return result;
+
+    }
+
+    private void display(Entity entity) {
+        if (entity.getType() == 1) {
             img_display.setVisibility(View.VISIBLE);
             Glide.with(getApplicationContext()) // replace with 'this' if it's in activity
                     .load(entity.getPath_file_online())
                     .into(img_display);
             img_display.setScaleType(ImageView.ScaleType.MATRIX);
 
-        } else if (result.getType() == 0) {
+        } else if (entity.getType() == 0) {
             videoView.setVisibility(View.VISIBLE);
             videoView.setVideoPath(entity.getPath_file_online());
             videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -248,7 +349,7 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
     private void initView() {
         img_display = findViewById(R.id.img_display);
         previewView = findViewById(R.id.preview);
-
+        drawBoundingBox = findViewById(R.id.drawbox);
         try {
             model = FeatureExtractor.newInstance(this);
 
@@ -294,8 +395,8 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
         cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
     }
 
-    private static final float IMAGE_MEAN = 127.5f;
-    private static final float IMAGE_STD = 127.5f;
+    private static final float IMAGE_MEAN = 0.0f;
+    private static final float IMAGE_STD = 1.0f;
 
     FeatureExtractor model;
     TensorBuffer inputFeature0;
@@ -303,7 +404,6 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
     int DIM_IMG_SIZE_X = 224;
     int DIM_IMG_SIZE_Y = 224;
     int DIM_PIXEL_SIZE = 3;
-    ImageView img;
 
     private ByteBuffer convertBitmapToByteBuffer(Bitmap bitmap) {
         bitmap = Bitmap.createScaledBitmap(bitmap, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, false);
@@ -333,34 +433,21 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
         return features;
     }
 
-    private void search(List<Classifier.Recognition> recognitions, Bitmap bitmap) {
-        float[] target = featureExtractor(Constants.bitmap);
-        for (Classifier.Recognition recognition : recognitions) {
-            RectF rectF = recognition.getLocation();
-            WIDTH = bitmap.getWidth();
-            HEIGHT = bitmap.getHeight();
-
-            float sizeWRate = WIDTH / 640f;
-            float sizeHRate = HEIGHT / 640f;
-            Log.e("TAG", "sizeWRate: " + sizeWRate);
-            Log.e("TAG", "sizeHRate: " + sizeHRate);
-
-            Log.e("TAG", "run: " + WIDTH);
-            Log.e("TAG", "run: " + HEIGHT);
-            assert (rectF.left < rectF.right && rectF.top < rectF.bottom);
-            crop = Bitmap.createBitmap((int) (rectF.right * sizeWRate - rectF.left * sizeWRate), (int)
-                    (rectF.bottom * sizeHRate - rectF.top * sizeHRate), Bitmap.Config.ARGB_8888);
-            new Canvas(crop).drawBitmap(bitmap, -rectF.left * sizeWRate, -rectF.top * sizeHRate, null);
-            img.setImageBitmap(crop);
-            float[] feature = featureExtractor(crop);
-            double cosine = Constants.cosineSimilarity(feature, target);
-            Log.e("Result", String.valueOf(cosine));
-            if (cosine > 0.75) {
-                flag = true;
-                display();
-
+    private Entity search(Bitmap bitmap) {
+        double max = 0;
+        Entity result = null;
+        float[] target = featureExtractor(bitmap);
+        for (Entity entity : entityList
+        ) {
+            double cosine = Constants.cosineSimilarity(entity.convertListToArray(), target);
+            if (cosine > 0.6) {
+                if (cosine > max) {
+                    result = entity;
+                    max = cosine;
+                }
             }
         }
+        return result;
     }
 
 

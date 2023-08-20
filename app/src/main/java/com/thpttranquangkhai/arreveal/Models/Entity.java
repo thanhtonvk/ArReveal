@@ -11,8 +11,12 @@ public class Entity {
     private String image_online;
     private int type;
 
-    public List<Float> getEmbedding() {
-        return embedding;
+    public float[] convertListToArray() {
+        float[] result = new float[512];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = embedding.get(i);
+        }
+        return result;
     }
 
     public void setEmbedding(List<Float> embedding) {
@@ -21,6 +25,10 @@ public class Entity {
 
     private List<Float> embedding;
     public static Bitmap bitmap;
+
+    public List<Float> getEmbedding() {
+        return embedding;
+    }
 
     public Entity() {
     }

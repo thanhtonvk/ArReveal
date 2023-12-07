@@ -30,6 +30,8 @@ public class Constants {
     public static School SCHOOL;
     public static Grade GRADE;
     public static Subject SUBJECT;
+    public static float Threshold;
+    public static String idYoutube;
     public static int[] colors = new int[]{
             Color.rgb(255, 0, 0),        // Red 500
             Color.rgb(33, 150, 243),     // Blue 500

@@ -108,18 +108,26 @@
                         android:layout_marginRight="5dp"
                         android:text="Hình động" />
 
+                    <!--                    <RadioButton-->
+                    <!--                        android:id="@+id/rb_mohinh"-->
+                    <!--                        android:layout_width="wrap_content"-->
+                    <!--                        android:layout_height="match_parent"-->
+                    <!--                        android:layout_marginLeft="5dp"-->
+                    <!--                        android:layout_marginRight="5dp"-->
+                    <!--                        android:text="Mô hình 3D" />-->
                     <RadioButton
-                        android:id="@+id/rb_mohinh"
+                        android:id="@+id/rb_youtube"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:layout_marginLeft="5dp"
                         android:layout_marginRight="5dp"
-                        android:text="Mô hình 3D" />
+                        android:text="Youtube" />
                 </RadioGroup>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
+            android:id="@+id/cv_upload"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
@@ -150,14 +158,45 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cv_youtube"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="5dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="5dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="24dp"
+                    android:text="Link youtube"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/edt_link"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:background="@drawable/editext"
+                    android:drawableLeft="@drawable/baseline_link_24" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
         <Button
-            android:backgroundTint="@color/primary"
             android:id="@+id/btn_add"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:layout_marginTop="20dp"
             android:background="@drawable/button"
+            android:backgroundTint="@color/primary"
             android:paddingLeft="20dp"
             android:paddingRight="15dp"
             android:text="Thêm"

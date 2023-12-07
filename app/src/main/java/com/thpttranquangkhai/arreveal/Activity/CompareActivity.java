@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -30,10 +31,12 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.MediaController;
 import android.widget.Toast;
 import android.widget.VideoView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.common.internal.service.Common;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -78,10 +81,12 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
     PointF start = new PointF();
     PointF mid = new PointF();
     float oldDist = 1f;
-    VideoView videoView;
+
     FirebaseDatabase database;
     DatabaseReference reference;
 
+
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,12 +104,13 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
             }
         });
         img_display.setOnTouchListener(this);
-        setRotationImage();
-        videoView = findViewById(R.id.video_play);
+
+
         initModel();
         database = FirebaseDatabase.getInstance();
         reference = database.getReference("Entity").child(SUBJECT.getId());
         loadDataList();
+
     }
 
     private void loadDataList() {
@@ -134,18 +140,6 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
 
     float rotation = 0;
 
-    private void setRotationImage() {
-        findViewById(R.id.btn_rotation).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                rotation += 90;
-                if (rotation > 360) {
-                    rotation = 0;
-                }
-                img_display.setRotation(rotation);
-            }
-        });
-    }
 
     private double spacing(MotionEvent event) {
         float x = event.getX(0) - event.getX(1);
@@ -333,16 +327,12 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
             img_display.setScaleType(ImageView.ScaleType.MATRIX);
 
         } else if (entity.getType() == 0) {
-            videoView.setVisibility(View.VISIBLE);
-            videoView.setVideoPath(entity.getPath_file_online());
-            videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    mp.setLooping(true);
-                }
-            });
-            videoView.start();
+            Constants.idYoutube = entity.getPath_file_online();
+            startActivity(new Intent(CompareActivity.this, PlayVideoActivity.class));
 
+        } else if (entity.getType() == 2) {
+            Constants.idYoutube = entity.getPath_file_online();
+            startActivity(new Intent(CompareActivity.this, PlayYoutubeActivity.class));
         }
     }
 
@@ -396,13 +386,13 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
     }
 
     private static final float IMAGE_MEAN = 0.0f;
-    private static final float IMAGE_STD = 1.0f;
+    private static final float IMAGE_STD = 255.0f;
 
     FeatureExtractor model;
     TensorBuffer inputFeature0;
     int DIM_BATCH_SIZE = 1;
-    int DIM_IMG_SIZE_X = 224;
-    int DIM_IMG_SIZE_Y = 224;
+    int DIM_IMG_SIZE_X = 32;
+    int DIM_IMG_SIZE_Y = 32;
     int DIM_PIXEL_SIZE = 3;
 
     private ByteBuffer convertBitmapToByteBuffer(Bitmap bitmap) {
@@ -440,10 +430,13 @@ public class CompareActivity extends AppCompatActivity implements View.OnTouchLi
         for (Entity entity : entityList
         ) {
             double cosine = Constants.cosineSimilarity(entity.convertListToArray(), target);
-            if (cosine > 0.6) {
+            Log.d("COSINE", "search: " + cosine);
+            if (cosine > Constants.Threshold) {
                 if (cosine > max) {
+                    Toast.makeText(this, "score " + cosine, Toast.LENGTH_SHORT).show();
                     result = entity;
                     max = cosine;
+
                 }
             }
         }

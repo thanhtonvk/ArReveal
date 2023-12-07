@@ -59,16 +59,6 @@
         android:layout_centerInParent="true"
         android:visibility="invisible" />
 
-    <VideoView
-        android:id="@+id/video_play"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/cv"
-        android:layout_marginStart="30dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="30dp"
-        android:layout_marginBottom="100dp"
-        android:visibility="invisible" />
 
     <ImageView
         android:id="@+id/img"

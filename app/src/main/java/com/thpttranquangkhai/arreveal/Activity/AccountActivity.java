@@ -6,7 +6,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.widget.EditText;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -20,6 +23,7 @@ import com.thpttranquangkhai.arreveal.Utilities.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class AccountActivity extends AppCompatActivity {
 
@@ -28,6 +32,8 @@ public class AccountActivity extends AppCompatActivity {
     List<Account> accountList = new ArrayList<>();
     FirebaseDatabase database;
     DatabaseReference reference;
+    EditText edtSearch;
+    List<Account> temp = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,13 +41,50 @@ public class AccountActivity extends AppCompatActivity {
         setContentView(R.layout.activity_account);
         initView();
         loadData();
+        search();
     }
 
     private void initView() {
         rcvItem = findViewById(R.id.rcv_item);
+        edtSearch = findViewById(R.id.edt_search);
         userAdapter = new UserAdapter(AccountActivity.this, accountList);
         rcvItem.setAdapter(userAdapter);
         database = FirebaseDatabase.getInstance();
+    }
+
+    private void search() {
+        edtSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                if (charSequence.length() != 0) {
+                    List<Account> temp = new ArrayList<>();
+                    for (Account entity : accountList
+                    ) {
+                        String search = edtSearch.getText().toString().toLowerCase(Locale.ROOT);
+                        if (entity.getName().toLowerCase(Locale.ROOT).contains(search) || entity.getEmail().toLowerCase(Locale.ROOT).contains(search)) {
+                            temp.add(entity);
+                        }
+                        userAdapter = new UserAdapter(getApplicationContext(), temp);
+                        rcvItem.setAdapter(userAdapter);
+                    }
+                } else {
+                    userAdapter = new UserAdapter(getApplicationContext(), accountList);
+                    rcvItem.setAdapter(userAdapter);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+
+        });
     }
 
     private void loadData() {

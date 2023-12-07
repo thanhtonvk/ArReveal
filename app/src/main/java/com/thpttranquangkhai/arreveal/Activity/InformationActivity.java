@@ -6,6 +6,7 @@ import static com.thpttranquangkhai.arreveal.Utilities.Constants.SUBJECT;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -18,6 +19,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioButton;
@@ -38,7 +40,6 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.thpttranquangkhai.arreveal.ml.FeatureExtractor;
-import com.thpttranquangkhai.arreveal.ml.Model;
 
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
@@ -50,12 +51,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class InformationActivity extends AppCompatActivity {
 
     TextView edtFile;
     EditText edtName;
-    RadioButton rbVideo, rbGif, rbModel;
+    RadioButton rbVideo, rbGif, rbYoutube;
     ImageView imageView;
     Entity entity;
     FirebaseDatabase firebaseDatabase;
@@ -63,6 +66,8 @@ public class InformationActivity extends AppCompatActivity {
     StorageReference storageReference;
     FirebaseStorage firebaseStorage;
     Random random;
+    CardView cvUpload, cvYoutube;
+    EditText edtLinkYoutube;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,20 +106,58 @@ public class InformationActivity extends AppCompatActivity {
         edtName = findViewById(R.id.edt_name);
         rbVideo = findViewById(R.id.rb_video);
         rbGif = findViewById(R.id.rb_hinhdong);
-        rbModel = findViewById(R.id.rb_mohinh);
+        rbYoutube = findViewById(R.id.rb_youtube);
         imageView = findViewById(R.id.img_image);
+        cvUpload = findViewById(R.id.cv_upload);
+        cvYoutube = findViewById(R.id.cv_youtube);
+        edtLinkYoutube = findViewById(R.id.edt_link);
 
     }
 
     private static final int REQUEST_UPLOAD = 3234;
 
     private void onClick() {
+
         edtFile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("*/*");
-                startActivityForResult(Intent.createChooser(intent, "Open folder"), REQUEST_UPLOAD);
+                if (!rbYoutube.isChecked()) {
+                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                    intent.setType("*/*");
+                    startActivityForResult(Intent.createChooser(intent, "Open folder"), REQUEST_UPLOAD);
+                }
+
+            }
+        });
+        rbGif.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (rbGif.isChecked()) {
+                    cvUpload.setVisibility(View.VISIBLE);
+                    cvYoutube.setVisibility(View.GONE);
+                }
+
+            }
+        });
+        rbVideo.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (rbVideo.isChecked()) {
+                    cvUpload.setVisibility(View.VISIBLE);
+                    cvYoutube.setVisibility(View.GONE);
+                }
+
+            }
+        });
+        rbYoutube.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (rbYoutube.isChecked()) {
+                    cvUpload.setVisibility(View.GONE);
+                    cvYoutube.setVisibility(View.VISIBLE);
+                }
+
+
             }
         });
         findViewById(R.id.btn_add).setOnClickListener(new View.OnClickListener() {
@@ -130,8 +173,9 @@ public class InformationActivity extends AppCompatActivity {
                     if (rbVideo.isChecked()) {
                         type = 0;
                     }
-                    if (rbModel.isChecked()) {
+                    if (rbYoutube.isChecked()) {
                         type = 2;
+
                     }
                     entity.setId(random.nextInt());
                     entity.setName(edtName.getText().toString());
@@ -144,68 +188,131 @@ public class InformationActivity extends AppCompatActivity {
         });
     }
 
+
+    public String youtubeParser(String url) {
+        String regex = "^.*((youtu.be/)|(v/)|(/u/\\w/)|(embed/)|(watch\\?))\\??v?=?([^#&?]*).*";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(url);
+
+        if (matcher.matches() && matcher.group(7).length() == 11) {
+            return matcher.group(7);
+        } else {
+            return null;
+        }
+    }
+
+    String fileName = "";
+
     private void add() {
         ProgressDialog dialog = new ProgressDialog(InformationActivity.this);
-        String fileName = path.split("/")[path.split("/").length - 1];
         dialog.setTitle("Đang upload");
         dialog.show();
-        storageReference = firebaseStorage.getReference(fileName);
-        storageReference.putFile(uriUploadFile).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+        if (rbYoutube.isChecked()) {
+            String values = edtLinkYoutube.getText().toString();
+            fileName = youtubeParser(values);
+            if (fileName == null) {
+                Toast.makeText(InformationActivity.this, "Đường dẫn không hợp lệ", Toast.LENGTH_LONG).show();
+            } else {
+                entity.setPath_file_online(fileName);
+                storageReference = firebaseStorage.getReference(fileName);
+                storageReference.putBytes(Constants.IMAGE).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
-                    public void onSuccess(Uri uri) {
-                        Log.e("TAG", "upload file " + uri.toString());
-                        entity.setPath_file_online(uri.toString());
-                        storageReference = firebaseStorage.getReference("image"+fileName.split("\\.")[0] + ".jpg");
-                        storageReference.putBytes(Constants.IMAGE).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                             @Override
-                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            public void onSuccess(Uri uri) {
+                                Log.e("TAG", "upload image " + uri.toString());
+                                entity.setImage_online(uri.toString());
+                                databaseReference.child(SUBJECT.getId()).child(String.valueOf(entity.getId())).setValue(entity).addOnCompleteListener(new OnCompleteListener<Void>() {
                                     @Override
-                                    public void onSuccess(Uri uri) {
-                                        Log.e("TAG", "upload image " + uri.toString());
-                                        entity.setImage_online(uri.toString());
-                                        databaseReference.child(SUBJECT.getId()).child(String.valueOf(entity.getId())).setValue(entity).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<Void> task) {
-                                                if (task.isSuccessful()) {
-                                                    Toast.makeText(getApplicationContext(), "Thành công", Toast.LENGTH_LONG).show();
-                                                    dialog.dismiss();
-                                                    finish();
-                                                    startActivity(new Intent(getApplicationContext(), UserActivity.class));
-                                                }
-                                            }
-                                        }).addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                Log.e("TAG", "onFailure: " + e.toString());
-                                            }
-                                        });
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        if (task.isSuccessful()) {
+                                            Toast.makeText(getApplicationContext(), "Thành công", Toast.LENGTH_LONG).show();
+                                            dialog.dismiss();
+                                            finish();
+                                            startActivity(new Intent(getApplicationContext(), UserActivity.class));
+                                        }
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Log.e("TAG", "onFailure: " + e.toString());
                                     }
                                 });
                             }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(getApplicationContext(), "Upload lỗi", Toast.LENGTH_LONG).show();
-                                Log.e("TAG", "onFailure: " + e.toString());
-                                dialog.dismiss();
-                            }
                         });
                     }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(getApplicationContext(), "Upload lỗi", Toast.LENGTH_LONG).show();
+                        Log.e("TAG", "onFailure: " + e.toString());
+                        dialog.dismiss();
+                    }
                 });
+            }
 
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(getApplicationContext(), "Upload lỗi", Toast.LENGTH_LONG).show();
-                dialog.dismiss();
-                Log.e("TAG", "onFailure: " + e.toString());
-            }
-        });
+        } else {
+            fileName = path.split("/")[path.split("/").length - 1];
+            storageReference = firebaseStorage.getReference(fileName);
+            storageReference.putFile(uriUploadFile).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                        @Override
+                        public void onSuccess(Uri uri) {
+                            Log.e("TAG", "upload file " + uri.toString());
+                            entity.setPath_file_online(uri.toString());
+
+                            storageReference = firebaseStorage.getReference("image" + fileName.split("\\.")[0] + ".jpg");
+                            storageReference.putBytes(Constants.IMAGE).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                @Override
+                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                    storageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                        @Override
+                                        public void onSuccess(Uri uri) {
+                                            Log.e("TAG", "upload image " + uri.toString());
+                                            entity.setImage_online(uri.toString());
+                                            databaseReference.child(SUBJECT.getId()).child(String.valueOf(entity.getId())).setValue(entity).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    if (task.isSuccessful()) {
+                                                        Toast.makeText(getApplicationContext(), "Thành công", Toast.LENGTH_LONG).show();
+                                                        dialog.dismiss();
+                                                        finish();
+                                                        startActivity(new Intent(getApplicationContext(), UserActivity.class));
+                                                    }
+                                                }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    Log.e("TAG", "onFailure: " + e.toString());
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Toast.makeText(getApplicationContext(), "Upload lỗi", Toast.LENGTH_LONG).show();
+                                    Log.e("TAG", "onFailure: " + e.toString());
+                                    dialog.dismiss();
+                                }
+                            });
+                        }
+                    });
+
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(getApplicationContext(), "Upload lỗi", Toast.LENGTH_LONG).show();
+                    dialog.dismiss();
+                    Log.e("TAG", "onFailure: " + e.toString());
+                }
+            });
+        }
 
 
     }
@@ -213,13 +320,13 @@ public class InformationActivity extends AppCompatActivity {
     String path;
     Uri uriUploadFile;
     private static final float IMAGE_MEAN = 0.0f;
-    private static final float IMAGE_STD = 1.0f;
+    private static final float IMAGE_STD = 255.0f;
 
     FeatureExtractor model;
     TensorBuffer inputFeature0;
     int DIM_BATCH_SIZE = 1;
-    int DIM_IMG_SIZE_X = 224;
-    int DIM_IMG_SIZE_Y = 224;
+    int DIM_IMG_SIZE_X = 32;
+    int DIM_IMG_SIZE_Y = 32;
     int DIM_PIXEL_SIZE = 3;
 
     @Override

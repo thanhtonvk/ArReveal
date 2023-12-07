@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".Activity.AccountActivity">
 
+
     <androidx.cardview.widget.CardView
         android:id="@+id/cv"
         android:layout_width="match_parent"
@@ -35,6 +36,16 @@
         android:layout_below="@id/cv"
         android:layout_margin="15dp"
         android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/edt_search"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/editext"
+            android:backgroundTint="@color/white"
+            android:drawableLeft="@drawable/ic_baseline_search_24"
+            android:hint="Tìm kiếm"
+            android:imeOptions="actionSearch" />
 
 
         <androidx.recyclerview.widget.RecyclerView
